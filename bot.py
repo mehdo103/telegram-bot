@@ -1,48 +1,53 @@
-from telegram.ext import Application, CommandHandler
+import os
 import logging
 import asyncio
 from aiohttp import web
-import os
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# تنظیم لاگ برای مشاهده خطاها
+# تنظیم لاگ
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-TOKEN = "توکن_واقعی_خودت_اینجا"
+# گرفتن توکن از محیط
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    logger.error("BOT_TOKEN تنظیم نشده!")
+    exit(1)
 
-async def start(update, context):
-    await update.message.reply_text("سلام! بات فعال شد ✅")
+# دستور /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("سلام! ربات آنلاین است ✅")
 
+# صفحه سلامت برای رندر
 async def health_check(request):
-    return web.Response(text="I'm alive!")
+    return web.Response(text="OK", status=200)
 
-def main():
-    # --- بخش ربات تلگرام ---
-    # drop_pending_updates=True باعث می‌شود خطای Conflict را نادیده بگیرد
-    app = Application.builder().token(TOKEN).drop_pending_updates(True).build()
+async def main():
+    # راه‌اندازی ربات
+    app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     
-    # --- بخش سرور وب برای Health Check رندر ---
-    async def run_bot_and_server():
-        # اجرای ربات در پس‌زمینه
-        bot_task = asyncio.create_task(app.run_polling())
-        
-        # اجرای یک سرور وب ساده روی پورتی که رندر به آن وصل می‌شود
-        web_app = web.Application()
-        web_app.router.add_get('/health', health_check)
-        runner = web.AppRunner(web_app)
-        await runner.setup()
-        # بستن به هاست 0.0.0.0 و پورت 10000 (پورت پیش‌فرض رندر)
-        site = web.TCPSite(runner, '0.0.0.0', port=10000)
-        await site.start()
-        logging.info("Health check server started on port 10000")
-        
-        # نگه‌داشتن برنامه تا زمانی که ربات کار می‌کند
-        await asyncio.Event().wait()
-
-    try:
-        asyncio.run(run_bot_and_server())
-    except KeyboardInterrupt:
-        print("ربات متوقف شد.")
+    # راه‌اندازی سرور وب برای health check
+    web_app = web.Application()
+    web_app.router.add_get("/", health_check)
+    web_app.router.add_get("/health", health_check)
+    
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    
+    # استفاده از پورت محیط یا ۱۰۰۰۰
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    
+    logger.info(f"ربات و سرور وب روی پورت {port} راه‌اندازی شدند!")
+    
+    # اجرای همزمان ربات و سرور
+    await asyncio.gather(
+        app.run_polling(),
+        asyncio.Event().wait()  # سرور رو روشن نگه می‌داره
+    )
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
