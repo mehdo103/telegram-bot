@@ -44,5 +44,5 @@ def main():
     except KeyboardInterrupt:
         print("ربات متوقف شد.")
 
-if name == "main":
+if __name__ == "__main__":
     main()
