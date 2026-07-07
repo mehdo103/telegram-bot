@@ -1,22 +1,15 @@
-import os
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler
 
-TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+TOKEN = "8827451419:AAEiywLVxGL1Bsdd-RpnY_U-SGue3kOmHeo"
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("سلام! بات آماده است.")
+async def start(update, context):
+    await update.message.reply_text("سلام! بات فعال شد ✅")
 
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.getenv("PORT", 8080)),
-        webhook_url=WEBHOOK_URL
-    )
+    print("بات روشن شد...")
+    app.run_polling()
 
-if name == "main":
+if __name__ == "__main__":
     main()
