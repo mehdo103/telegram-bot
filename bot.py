@@ -1,11 +1,11 @@
-from telegram import Update
-from telegram.ext import Application,CommandHandler,ContextTypes
+from telegram.ext import Updater, CommandHandler
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("سلام 👋 من ربات شما هستم")
+TOKEN = "توکن_بات_تت"
 
-app = Application.builder().token("8827451419:AAFnsbvId6Ac4gnxNyhJITdKbVgP9t8HgxY").build()
+def start(update, context):
+    update.message.reply_text("سلام!")
 
-app.add_handler(CommandHandler("start", start))
-
-app.run_polling()
+updater = Updater(TOKEN, use_context=True)
+updater.dispatcher.add_handler(CommandHandler("start", start))
+updater.start_polling()
+updater.idle()
